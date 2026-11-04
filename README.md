@@ -187,6 +187,25 @@ endpoint returns HTTP 503 while `GET /health` still answers. To point the app
 at a different model, call `create_app(model_path)` from `src.api` in your own
 script.
 
+The server binds to `127.0.0.1:8000` by default; override it with `--host` and
+`--port`.
+
+## Docker
+
+The API ships with a Dockerfile that installs only the serving dependencies
+from `requirements-api.txt` (a pinned subset of `requirements.txt`, checked for
+drift by `tests/test_requirements.py`):
+
+```powershell
+docker build -t used-car-price .
+docker run --rm -p 8000:8000 used-car-price
+```
+
+Then `http://127.0.0.1:8000/docs` is the same API as `python -m src.api`. The
+image contains `src/` and `models/04_best_model.joblib` only — no dataset,
+notebooks, or reports — and declares a `HEALTHCHECK` against `GET /health`.
+CI builds the image and smoke-tests a running container on every push.
+
 ## Tests
 
 The test suite uses pytest and does not need the raw dataset or trained model
@@ -198,13 +217,18 @@ python -m pytest
 
 It covers cleaning rules, feature engineering, the deterministic split, the
 baseline pipeline, prediction-side input validation, model loading, feature
-importance and error analysis, and the API contracts (including rejection of
-invalid payloads).
+importance and error analysis, the API contracts (including rejection of
+invalid payloads), and the API dependency pins.
 
 ## Notebooks
 
 Run the notebooks in order from `notebooks/`: `01_data_audit_eda.ipynb`,
-`02_eda.ipynb`, `03_preprocessing_features.ipynb`, and
-`04_modeling_evaluation.ipynb`. Set the notebook working directory to
-`notebooks/` as their relative paths expect. The cleaning notebook produces
-the processed CSV required by the remaining notebooks.
+`02_eda.ipynb`, `03_preprocessing_features.ipynb`,
+`04_modeling_evaluation.ipynb`, and `05_analysis_interpretability.ipynb`.
+Set the notebook working directory to `notebooks/` as their relative paths
+expect. The cleaning notebook produces the processed CSV required by the
+remaining notebooks.
+
+Notebook 05 reads the model chosen in notebook 04 and regenerates the analysis
+reports in `reports/` through `src.analysis`; it does not retune anything on
+the test set.

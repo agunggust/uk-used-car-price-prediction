@@ -378,6 +378,7 @@ def run_analysis(
         "price_bands": bands,
         "age_bands": ages,
         "worst": worst,
+        "figures": figures,
         "summary": summary,
     }
 

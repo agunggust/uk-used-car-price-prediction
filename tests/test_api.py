@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from src.api import create_app
+from src.api import build_parser, create_app
 from src.predict import PREDICTION_COLUMN, predict_prices
 from src.train import TARGET, build_model
 
@@ -126,3 +126,17 @@ def test_health_when_model_missing(tmp_path) -> None:
     response = client.get("/health")
 
     assert response.json() == {"status": "ok", "model": "missing"}
+
+
+def test_server_parser_defaults_to_localhost() -> None:
+    args = build_parser().parse_args([])
+
+    assert args.host == "127.0.0.1"
+    assert args.port == 8000
+
+
+def test_server_parser_accepts_container_binding() -> None:
+    args = build_parser().parse_args(["--host", "0.0.0.0", "--port", "9000"])
+
+    assert args.host == "0.0.0.0"
+    assert args.port == 9000

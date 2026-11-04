@@ -44,7 +44,7 @@ def load_dataset(data_path: Path = DATA_PATH) -> pd.DataFrame:
             f"Cleaned data not found at {data_path}; run `python -m src.data` first."
         )
     frame = pd.read_csv(data_path)
-    missing = sorted(set(INPUT_FEATURES + (TARGET,)) - set(frame.columns))
+    missing = sorted(set((*INPUT_FEATURES, TARGET)) - set(frame.columns))
     if missing:
         raise ValueError(f"Dataset is missing required columns: {missing}")
     if frame.empty:
@@ -116,8 +116,12 @@ def train_model(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train the Ridge price baseline.")
-    parser.add_argument("--data", type=Path, default=DATA_PATH, help="Cleaned CSV path.")
-    parser.add_argument("--model", type=Path, default=MODEL_PATH, help="Model output path.")
+    parser.add_argument(
+        "--data", type=Path, default=DATA_PATH, help="Cleaned CSV path."
+    )
+    parser.add_argument(
+        "--model", type=Path, default=MODEL_PATH, help="Model output path."
+    )
     args = parser.parse_args()
 
     train_model(args.data, args.model)

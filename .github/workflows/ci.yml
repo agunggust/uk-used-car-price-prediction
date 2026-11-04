@@ -27,3 +27,31 @@ jobs:
 
       - name: Run tests
         run: python -m pytest
+
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t used-car-price .
+
+      - name: Smoke test the running container
+        run: |
+          docker run -d --name api -p 8000:8000 used-car-price
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          echo "health:"
+          curl -fsS http://127.0.0.1:8000/health
+          echo
+          echo "predict:"
+          curl -fsS -X POST http://127.0.0.1:8000/predict \
+            -H 'Content-Type: application/json' \
+            -d '{"year":2019,"mileage":20000,"tax":145,"mpg":55.4,"engineSize":1.4,"brand":"audi","model":"A1","transmission":"Manual","fuelType":"Petrol"}'
+          echo
+          docker logs api

@@ -1,0 +1,26 @@
+# Runtime dependencies for the prediction API (`python -m src.api`) and the
+# Docker image. This is a subset of requirements.txt, which also carries the
+# notebook and tooling stack; every pin below must match requirements.txt so the
+# container serves exactly the model that the notebooks and tests produced.
+# `tests/test_requirements.py` fails if the pins drift apart.
+
+annotated-types==0.8.0
+anyio==4.15.1
+click==8.5.0
+fastapi==0.162.0
+joblib==1.6.0
+numpy==2.5.3
+pandas==3.0.6
+pydantic==2.14.2
+pydantic_core==2.50.2
+python-dateutil==2.9.0.post0
+scikit-learn==1.9.1
+scipy==1.18.1
+six==1.17.0
+starlette==1.10.0
+threadpoolctl==3.7.0
+typing_extensions==4.16.0
+typing-inspection==0.4.5
+tzdata==2026.5
+uvicorn==0.54.0
+xgboost==3.4.1

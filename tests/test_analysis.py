@@ -179,6 +179,13 @@ def test_run_analysis_writes_reports(
     for name in expected:
         assert (reports_dir / name).is_file(), name
 
+    assert set(results["figures"]) == {
+        "importance",
+        "importance_comparison",
+        "residuals",
+        "error_by_brand",
+    }
+
     summary = json.loads((reports_dir / "analysis_summary.json").read_text("utf-8"))
     assert summary["holdout_rows"] == len(results["predictions"])
     assert summary["holdout_metrics"]["MAE (£)"] > 0

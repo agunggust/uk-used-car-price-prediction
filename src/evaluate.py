@@ -49,8 +49,12 @@ def evaluate_model(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate the Ridge price baseline.")
-    parser.add_argument("--data", type=Path, default=DATA_PATH, help="Cleaned CSV path.")
-    parser.add_argument("--model", type=Path, default=MODEL_PATH, help="Saved model path.")
+    parser.add_argument(
+        "--data", type=Path, default=DATA_PATH, help="Cleaned CSV path."
+    )
+    parser.add_argument(
+        "--model", type=Path, default=MODEL_PATH, help="Saved model path."
+    )
     args = parser.parse_args()
 
     results = evaluate_model(args.data, args.model)

@@ -1,5 +1,6 @@
 """FastAPI service exposing the saved used-car price model."""
 
+import argparse
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -98,12 +99,24 @@ def create_app(model_path: Path = DEFAULT_MODEL_PATH) -> FastAPI:
 app = create_app()
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Parse the server host and port."""
+    parser = argparse.ArgumentParser(description="Serve the used-car price API.")
+    parser.add_argument(
+        "--host", default="127.0.0.1", help="Interface to bind; use 0.0.0.0 in Docker."
+    )
+    parser.add_argument("--port", type=int, default=8000, help="TCP port to bind.")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+    args = build_parser().parse_args(argv)
+
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

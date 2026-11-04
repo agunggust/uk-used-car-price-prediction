@@ -179,16 +179,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Tune used-car price models and evaluate the selected model."
     )
-    parser.add_argument("--data", type=Path, default=DATA_PATH, help="Cleaned CSV path.")
+    parser.add_argument(
+        "--data", type=Path, default=DATA_PATH, help="Cleaned CSV path."
+    )
     parser.add_argument(
         "--baseline-model",
         type=Path,
         default=BASELINE_MODEL_PATH,
         help="Ridge baseline model from step 03.",
     )
-    parser.add_argument("--model", type=Path, default=BEST_MODEL_PATH, help="Best model output.")
     parser.add_argument(
-        "--reports-dir", type=Path, default=REPORTS_DIR, help="Directory for metrics and CV results."
+        "--model", type=Path, default=BEST_MODEL_PATH, help="Best model output."
+    )
+    parser.add_argument(
+        "--reports-dir",
+        type=Path,
+        default=REPORTS_DIR,
+        help="Directory for metrics and CV results.",
     )
     parser.add_argument("--cv", type=int, default=CV_SPLITS, help="Number of CV folds.")
     args = parser.parse_args()

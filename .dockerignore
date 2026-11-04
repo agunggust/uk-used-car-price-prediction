@@ -1,0 +1,22 @@
+# Keep the build context small: only src/, models/ and requirements-api.txt
+# are needed to run the API.
+.git
+.github
+.venv
+**/__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+
+# Project data and analysis artifacts are not used at serving time.
+data
+notebooks
+reports
+tests
+
+# Docs and the full dependency set (the image installs requirements-api.txt).
+README.md
+LICENSE
+.gitignore
+requirements.txt
+pytest.ini

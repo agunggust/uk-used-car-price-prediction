@@ -86,7 +86,9 @@ def clean_data(frame: pd.DataFrame) -> pd.DataFrame:
         try:
             cleaned[column] = pd.to_numeric(cleaned[column], errors="raise")
         except (TypeError, ValueError) as error:
-            raise ValueError(f"Column {column!r} must contain numeric values") from error
+            raise ValueError(
+                f"Column {column!r} must contain numeric values"
+            ) from error
 
     cleaned = cleaned.drop_duplicates()
     cleaned = cleaned.loc[cleaned["year"].between(1995, 2020)]
