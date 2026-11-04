@@ -55,6 +55,40 @@ To customize file locations, use `--data-dir` and `--output` with
 `src.evaluate`. The model-selection command also accepts `--baseline-model`,
 `--reports-dir`, and `--cv`.
 
+## Predict prices
+
+`src.predict` scores new listings with the saved model. Pass a CSV with the same
+input columns as `cars_clean.csv` minus `price`:
+
+```powershell
+python -m src.predict --input listings.csv --output predictions.csv
+```
+
+Or score a single car with flags:
+
+```powershell
+python -m src.predict --year 2019 --mileage 20000 --tax 145 --mpg 55.4 `
+  --engine-size 1.4 --brand audi --model-name A1 --transmission Manual --fuel-type Petrol
+```
+
+Predictions are written to a `predicted_price` column. Missing or non-numeric
+inputs raise an error instead of being silently imputed, and the command uses
+`models/04_best_model.joblib` unless `--model` points elsewhere. If the input
+CSV still contains `price`, the command also prints MAE, RMSE, and R² for that
+batch.
+
+## Tests
+
+The test suite uses pytest and does not need the raw dataset or trained model
+artifacts — it builds small synthetic frames and fits the pipeline on them:
+
+```powershell
+python -m pytest
+```
+
+It covers cleaning rules, feature engineering, the deterministic split, the
+baseline pipeline, prediction-side input validation, and model loading.
+
 ## Notebooks
 
 Run the notebooks in order from `notebooks/`: `01_data_audit_eda.ipynb`,
