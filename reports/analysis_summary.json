@@ -1,0 +1,82 @@
+{
+  "holdout_rows": 19483,
+  "holdout_metrics": {
+    "MAE (£)": 1319.4783935546875,
+    "RMSE (£)": 2295.14599609375,
+    "R²": 0.947515606880188
+  },
+  "mean_residual": -171.82746329971062,
+  "median_pct_error": 0.06207125913578664,
+  "share_within_10pct": 0.7111327824257044,
+  "share_within_25pct": 0.9770569214186727,
+  "top_source_features": [
+    {
+      "name": "model",
+      "importance": 0.5133218220726121,
+      "share": 0.5133218266329346
+    },
+    {
+      "name": "transmission",
+      "importance": 0.24322801637026714,
+      "share": 0.2432280185310913
+    },
+    {
+      "name": "brand",
+      "importance": 0.12468744674697518,
+      "share": 0.12468744785469152
+    },
+    {
+      "name": "engineSize",
+      "importance": 0.04200653359293938,
+      "share": 0.04200653396612308
+    },
+    {
+      "name": "year (as car_age)",
+      "importance": 0.033123262226581573,
+      "share": 0.03312326252084679
+    },
+    {
+      "name": "fuelType",
+      "importance": 0.03279833517444786,
+      "share": 0.03279833546582644
+    },
+    {
+      "name": "mileage",
+      "importance": 0.004418132361024618,
+      "share": 0.0044181324002750605
+    },
+    {
+      "name": "mpg",
+      "importance": 0.004278885666280985,
+      "share": 0.004278885704294367
+    },
+    {
+      "name": "tax",
+      "importance": 0.002137556904926896,
+      "share": 0.0021375569239168325
+    }
+  ],
+  "worst_brand_by_mae": {
+    "brand": "merc",
+    "listings": 2627,
+    "median_price": 22399.0,
+    "mae": 2104.423346256275,
+    "median_abs_error": 1374.619140625,
+    "bias": -433.27079414568067,
+    "mae_pct_of_price": 0.09395166508577504
+  },
+  "best_brand_by_mae": {
+    "brand": "vauxhall",
+    "listings": 2659,
+    "median_price": 9990.0,
+    "mae": 756.0379705009447,
+    "median_abs_error": 578.201416015625,
+    "bias": -53.33750364053245,
+    "mae_pct_of_price": 0.07567947652662109
+  },
+  "figures": {
+    "importance": "reports/figures/analysis_feature_importance.png",
+    "residuals": "reports/figures/analysis_residuals.png",
+    "error_by_brand": "reports/figures/analysis_error_by_brand.png"
+  }
+}
