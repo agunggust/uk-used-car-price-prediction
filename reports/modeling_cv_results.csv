@@ -1,0 +1,8 @@
+rank_test_score,model,model_parameters,mean_cv_mae,std_cv_mae
+1,XGBRegressor,"{""colsample_bytree"": 0.8, ""learning_rate"": 0.1, ""max_depth"": 7, ""n_estimators"": 180, ""reg_lambda"": 1.0, ""subsample"": 0.8}",1311.8056640625,6.44817844906085
+2,XGBRegressor,"{""colsample_bytree"": 0.8, ""learning_rate"": 0.05, ""max_depth"": 7, ""n_estimators"": 180, ""reg_lambda"": 1.0, ""subsample"": 0.8}",1433.5267333984375,6.051421613240922
+3,XGBRegressor,"{""colsample_bytree"": 0.8, ""learning_rate"": 0.1, ""max_depth"": 5, ""n_estimators"": 180, ""reg_lambda"": 1.0, ""subsample"": 0.8}",1518.5718587239583,13.635011548930075
+4,Ridge,"{""alpha"": 1.0, ""solver"": ""lsqr""}",1646.6350185642177,12.614616713342247
+5,Ridge,"{""alpha"": 10.0, ""solver"": ""lsqr""}",1663.4859352942005,14.831039091101529
+6,XGBRegressor,"{""colsample_bytree"": 0.8, ""learning_rate"": 0.05, ""max_depth"": 5, ""n_estimators"": 180, ""reg_lambda"": 1.0, ""subsample"": 0.8}",1709.0184733072917,11.123143060030355
+7,Ridge,"{""alpha"": 100.0, ""solver"": ""lsqr""}",1818.8579599282036,18.847513003094452

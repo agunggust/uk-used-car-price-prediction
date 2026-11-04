@@ -1,0 +1,35 @@
+{
+  "selection_metric": "3-fold cross-validated MAE (£), training split only",
+  "cv_splits": 3,
+  "best_cv_mae": 1311.8056640625,
+  "selected_model": {
+    "name": "XGBRegressor",
+    "parameters": {
+      "n_estimators": 180,
+      "max_depth": 7,
+      "learning_rate": 0.1,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "reg_lambda": 1.0
+    }
+  },
+  "test_size": 19483,
+  "training_size": 77928,
+  "test_metrics": {
+    "Selected model": {
+      "MAE (£)": 1319.4783935546875,
+      "RMSE (£)": 2295.14599609375,
+      "R²": 0.947515606880188
+    },
+    "Ridge baseline": {
+      "MAE (£)": 1651.4390992259157,
+      "RMSE (£)": 3090.406238215382,
+      "R²": 0.904843006525988
+    },
+    "Median dummy": {
+      "MAE (£)": 6854.097495252271,
+      "RMSE (£)": 10270.572144129774,
+      "R²": -0.05099062826000522
+    }
+  }
+}
