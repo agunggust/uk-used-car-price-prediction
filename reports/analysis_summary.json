@@ -56,6 +56,53 @@
       "share": 0.0021375569239168325
     }
   ],
+  "top_permutation_features": [
+    {
+      "feature": "engineSize",
+      "mae_increase": 2447.9340576171876,
+      "std": 16.289182055722964
+    },
+    {
+      "feature": "year",
+      "mae_increase": 2151.5021240234373,
+      "std": 21.935511158943054
+    },
+    {
+      "feature": "brand",
+      "mae_increase": 1155.2641845703124,
+      "std": 6.983461192386126
+    },
+    {
+      "feature": "mileage",
+      "mae_increase": 949.4504638671875,
+      "std": 11.423423671074866
+    },
+    {
+      "feature": "mpg",
+      "mae_increase": 887.3561279296875,
+      "std": 8.017272557409791
+    },
+    {
+      "feature": "model",
+      "mae_increase": 870.5033935546875,
+      "std": 3.9366719013930833
+    },
+    {
+      "feature": "transmission",
+      "mae_increase": 856.6908935546875,
+      "std": 7.712945965403912
+    },
+    {
+      "feature": "fuelType",
+      "mae_increase": 145.42998046875,
+      "std": 4.161074058477814
+    },
+    {
+      "feature": "tax",
+      "mae_increase": 57.270849609375,
+      "std": 3.2792786047530478
+    }
+  ],
   "worst_brand_by_mae": {
     "brand": "merc",
     "listings": 2627,
@@ -76,6 +123,7 @@
   },
   "figures": {
     "importance": "reports/figures/analysis_feature_importance.png",
+    "importance_comparison": "reports/figures/analysis_importance_comparison.png",
     "residuals": "reports/figures/analysis_residuals.png",
     "error_by_brand": "reports/figures/analysis_error_by_brand.png"
   }

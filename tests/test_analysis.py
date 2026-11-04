@@ -14,6 +14,7 @@ from src.analysis import (
     error_by_segment,
     feature_importances,
     holdout_predictions,
+    permutation_importances,
     run_analysis,
 )
 from src.train import TARGET, build_model
@@ -136,6 +137,24 @@ def test_error_by_age_covers_every_row(fitted_model, data_path) -> None:
     assert ages["listings"].sum() == len(predictions)
 
 
+def test_permutation_importance_detects_real_signal(fitted_model, listings) -> None:
+    X = listings.drop(columns=TARGET)
+    y = listings[TARGET]
+
+    permuted = permutation_importances(model=fitted_model, X=X, y=y, n_repeats=3)
+
+    assert list(permuted.columns) == ["feature", "mae_increase", "std"]
+    assert set(permuted["feature"]) == set(X.columns)
+    assert permuted["mae_increase"].notna().all()
+
+    ranked = dict(zip(permuted["feature"], permuted["mae_increase"]))
+    # `tax` is constant in the fixture, so shuffling it must not hurt.
+    assert ranked["tax"] == pytest.approx(0.0, abs=1e-6)
+    # `year` and `mileage` drive the synthetic price formula.
+    assert ranked["year"] > 0
+    assert ranked["mileage"] > 0
+
+
 def test_run_analysis_writes_reports(
     tmp_path, data_path, model_path, listings
 ) -> None:
@@ -148,6 +167,7 @@ def test_run_analysis_writes_reports(
     expected = [
         "feature_importance_top.csv",
         "feature_importance_by_source.csv",
+        "feature_importance_permutation.csv",
         "error_by_brand.csv",
         "error_by_transmission.csv",
         "error_by_fuelType.csv",
@@ -166,6 +186,8 @@ def test_run_analysis_writes_reports(
     assert summary["figures"]["importance"].endswith(
         "figures/analysis_feature_importance.png"
     )
+    assert 0 < len(summary["top_permutation_features"]) <= 10
+    assert (reports_dir / "figures" / "analysis_importance_comparison.png").is_file()
 
     worst = pd.read_csv(reports_dir / "worst_predictions.csv")
     assert len(worst) == min(20, len(results["predictions"]))

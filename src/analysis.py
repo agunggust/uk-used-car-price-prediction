@@ -13,10 +13,12 @@ import pandas as pd
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # backend must be set before pyplot is imported
 
+from sklearn.inspection import permutation_importance as sklearn_permutation_importance
+
 from src.evaluate import score_regression
 from src.features import add_car_age
 from src.modeling import BEST_MODEL_PATH
-from src.train import DATA_PATH, load_dataset, split_dataset
+from src.train import DATA_PATH, INPUT_FEATURES, load_dataset, split_dataset
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +26,8 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 TOP_FEATURES = 20
 WORST_CASES = 20
 ERROR_SEGMENTS = ("brand", "transmission", "fuelType")
+PERMUTATION_REPEATS = 5
+RANDOM_STATE = 42
 
 
 def _fitted_preprocessor(model):
@@ -94,6 +98,34 @@ def aggregated_importances(importances: pd.DataFrame) -> pd.DataFrame:
     )
     totals["share"] = totals["importance"] / totals["importance"].sum()
     return totals
+
+
+def permutation_importances(
+    model, X: pd.DataFrame, y: pd.Series, n_repeats: int = PERMUTATION_REPEATS
+) -> pd.DataFrame:
+    """Measure how much MAE worsens when each source column is shuffled.
+
+    Unlike impurity importance this is not biased towards high-cardinality
+    columns such as ``model`` (194 distinct values), so the two views can be
+    compared. Values are mean MAE increase in pounds over ``n_repeats``.
+    """
+    result = sklearn_permutation_importance(
+        model,
+        X,
+        y,
+        scoring="neg_mean_absolute_error",
+        n_repeats=n_repeats,
+        random_state=RANDOM_STATE,
+        n_jobs=1,
+    )
+    frame = pd.DataFrame(
+        {
+            "feature": X.columns,
+            "mae_increase": result.importances_mean,
+            "std": result.importances_std,
+        }
+    )
+    return frame.sort_values("mae_increase", ascending=False).reset_index(drop=True)
 
 
 def holdout_predictions(model, data_path: Path = DATA_PATH) -> pd.DataFrame:
@@ -170,6 +202,34 @@ def error_by_age(predictions: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
     return grouped
+
+
+def _plot_importance_comparison(
+    by_source: pd.DataFrame, permuted: pd.DataFrame, figures_dir: Path
+) -> Path:
+    """Show impurity and permutation importance side by side."""
+    figure, axes = plt.subplots(1, 2, figsize=(13, 5))
+
+    impurity = by_source.iloc[::-1].copy()
+    impurity["name"] = impurity["name"].str.replace(
+        "year (as car_age)", "year", regex=False
+    )
+    axes[0].barh(impurity["name"], impurity["share"], color="#2a6f97")
+    axes[0].set_title("Impurity importance (share)")
+    axes[0].set_xlabel("Share of total importance")
+    axes[0].xaxis.set_major_formatter(lambda value, _: f"{value:.0%}")
+
+    permutation = permuted.iloc[::-1]
+    axes[1].barh(permutation["feature"], permutation["mae_increase"], color="#b23a48")
+    axes[1].set_title("Permutation importance (MAE increase)")
+    axes[1].set_xlabel("MAE increase when column is shuffled (£)")
+
+    figure.suptitle("The two importance views disagree", fontsize=13)
+    figure.tight_layout()
+    path = figures_dir / "analysis_importance_comparison.png"
+    figure.savefig(path, dpi=150)
+    plt.close(figure)
+    return path
 
 
 def _plot_importances(by_source: pd.DataFrame, figures_dir: Path) -> Path:
@@ -256,6 +316,9 @@ def run_analysis(
     importances = feature_importances(model)
     by_source = aggregated_importances(importances)
     predictions = holdout_predictions(model, data_path)
+    permuted = permutation_importances(
+        model, predictions.loc[:, list(INPUT_FEATURES)], predictions["actual"]
+    )
     segments = error_by_segment(predictions)
     bands = error_by_price_band(predictions)
     ages = error_by_age(predictions)
@@ -264,6 +327,7 @@ def run_analysis(
         reports_dir / "feature_importance_top.csv", index=False
     )
     by_source.to_csv(reports_dir / "feature_importance_by_source.csv", index=False)
+    permuted.to_csv(reports_dir / "feature_importance_permutation.csv", index=False)
     for column, table in segments.items():
         table.to_csv(reports_dir / f"error_by_{column}.csv", index=False)
     bands.to_csv(reports_dir / "error_by_price_band.csv", index=False)
@@ -278,6 +342,9 @@ def run_analysis(
     figures_dir.mkdir(parents=True, exist_ok=True)
     figures = {
         "importance": _plot_importances(by_source, figures_dir),
+        "importance_comparison": _plot_importance_comparison(
+            by_source, permuted, figures_dir
+        ),
         "residuals": _plot_residuals(predictions, figures_dir),
         "error_by_brand": _plot_error_by_brand(segments, figures_dir),
     }
@@ -291,6 +358,7 @@ def run_analysis(
         "share_within_10pct": float((predictions["pct_error"] <= 0.10).mean()),
         "share_within_25pct": float((predictions["pct_error"] <= 0.25).mean()),
         "top_source_features": by_source.head(10).to_dict(orient="records"),
+        "top_permutation_features": permuted.head(10).to_dict(orient="records"),
         "worst_brand_by_mae": segments["brand"].iloc[0].to_dict(),
         "best_brand_by_mae": segments["brand"].iloc[-1].to_dict(),
         "figures": {
@@ -304,6 +372,7 @@ def run_analysis(
     return {
         "importances": importances,
         "by_source": by_source,
+        "permutation": permuted,
         "predictions": predictions,
         "segments": segments,
         "price_bands": bands,
@@ -330,10 +399,19 @@ def _print_report(results: dict[str, object], reports_dir: Path) -> None:
         f"{summary['share_within_25pct']:.1%} within ±25%"
     )
 
-    print("\nTop source features:")
+    print("\nTop source features (impurity, biased toward many categories):")
     print(results["by_source"].head(10).to_string(
         index=False,
         formatters={"importance": "{:.4f}".format, "share": "{:.1%}".format},
+    ))
+
+    print("\nPermutation importance (MAE increase in £ when shuffled):")
+    print(results["permutation"].to_string(
+        index=False,
+        formatters={
+            "mae_increase": "£{:,.0f}".format,
+            "std": "£{:,.0f}".format,
+        },
     ))
 
     print("\nError by brand (worst first):")

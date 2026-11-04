@@ -1,5 +1,7 @@
 # uk-used-car-price-prediction
 
+[![CI](https://github.com/agunggust/uk-used-car-price-prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/agunggust/uk-used-car-price-prediction/actions/workflows/ci.yml)
+
 Baseline project for predicting UK used-car listing prices. The notebooks document
 the data audit, exploratory analysis, and Ridge baseline; the `src` package provides
 the same preparation and training steps as repeatable command-line commands.
@@ -65,22 +67,71 @@ To customize file locations, use `--data-dir` and `--output` with
 ## Analyze the model
 
 `python -m src.analysis` scores the same holdout split as `src.modeling` and
-writes CSV reports, a JSON summary, and three figures:
+writes CSV reports, a JSON summary, and four figures:
 
 | Output | Contents |
 |---|---|
 | `reports/feature_importance_top.csv` | 20 most important encoded features |
-| `reports/feature_importance_by_source.csv` | importance summed per source column |
+| `reports/feature_importance_by_source.csv` | impurity importance summed per source column |
+| `reports/feature_importance_permutation.csv` | MAE increase when each source column is shuffled |
 | `reports/error_by_{brand,transmission,fuelType}.csv` | MAE, median error, and bias per category |
 | `reports/error_by_price_band.csv` / `error_by_age.csv` | error across price quartiles and age bands |
 | `reports/worst_predictions.csv` | the 20 largest holdout misses |
-| `reports/analysis_summary.json` | headline metrics, accuracy bands, top features |
-| `reports/figures/analysis_*.png` | importance bars, residual scatter, MAE by brand |
+| `reports/analysis_summary.json` | headline metrics, accuracy bands, both importance views |
+| `reports/figures/analysis_*.png` | importance bars, the two importance views compared, residual scatter, MAE by brand |
 
-Importance is read from the fitted XGBoost booster and the encoded names come
-from the fitted `ColumnTransformer`, so one-hot categories are collapsed back
-onto their source column. The command accepts `--data`, `--model`, and
-`--reports-dir`.
+Impurity importance is read from the fitted XGBoost booster and the encoded
+names come from the fitted `ColumnTransformer`, so one-hot categories are
+collapsed back onto their source column. Because impurity importance is biased
+towards columns with many split points (`model` has 194 distinct values), the
+command also runs permutation importance — shuffling each source column through
+the full pipeline and measuring how much MAE worsens. The command accepts
+`--data`, `--model`, and `--reports-dir`.
+
+## Findings
+
+Numbers below come from the holdout split (19,483 listings) and can be
+regenerated with `python -m src.analysis`.
+
+**Overall accuracy.** MAE £1,319, RMSE £2,295, R² 0.948; the median listing is
+off by 6.2%, 71.1% fall within ±10% and 97.7% within ±25%. Mean residual is
+−£172, so the model slightly under-prices overall.
+
+**Error grows with price.** MAE rises from £618 on the cheapest quartile to
+£2,464 on the priciest, and relative error climbs from 7.7% to 9.2% with a
+−£955 bias in the top quartile: expensive cars are systematically under-valued.
+Reporting a single £1,319 MAE therefore flatters the cheap end, where most
+listings sit.
+
+**New cars are the hardest.** The 0–1 year band has the highest MAE (£1,890)
+versus £931 for 6–8 year cars — new-car pricing is driven by trim and options
+that are not in the dataset.
+
+**Brands.** Mercedes (£2,104), BMW (£1,880) and Audi (£1,815) have the largest
+absolute errors because their cars cost more, but on a relative basis they sit
+near the pack (9.1–9.4%); Vauxhall is easiest at £756 (7.6%).
+
+**The two importance views disagree.** Impurity importance ranks `model` at
+51% and `transmission` at 24% while `mileage` shows 0.4%. Permutation
+importance — which shuffles each source column through the whole pipeline —
+tells a different story: `engineSize` (+£2,448 MAE), `year` (+£2,152),
+`brand` (+£1,155) and `mileage` (+£949) matter most, while `model` adds only
+£871 and `tax` £57. The impurity numbers are inflated by `model` having 194
+distinct values, so use `reports/feature_importance_permutation.csv` when
+deciding which data to collect next.
+
+**Outliers are real data problems.** The worst miss is a 2011 Mercedes SL
+listed at £149,948 but predicted at £21,344; three of the five worst cases are
+Mercedes G-Class. Treat these as candidates for data cleaning rather than as
+model failures.
+
+**Do not read into tiny segments.** `Electric` and transmission `Other` have
+two listings each in the holdout, so their reported errors are noise.
+
+**Limitations.** The dataset is asking prices collected around 2020 and the
+split is random rather than time-based, so the model is not validated on later
+market conditions. There is no trim, condition, or damage history, and the
+model returns a point estimate with no uncertainty band.
 
 ## Predict prices
 
