@@ -24,10 +24,29 @@ model files.
 
 ## Dataset
 
-Download the UK used-car CSV files and put these nine files in `data/raw/`:
+Download the [100,000 UK Used Car Data set from Kaggle](https://www.kaggle.com/datasets/adityadesai13/used-car-dataset-ford-and-mercedes)
+and put these nine files in `data/raw/`:
 `audi.csv`, `bmw.csv`, `ford.csv`, `hyundi.csv`, `merc.csv`, `skoda.csv`,
-`toyota.csv`, `vauxhall.csv`, and `vw.csv`. The source dataset is not included
-in this repository.
+`toyota.csv`, `vauxhall.csv`, and `vw.csv`. The repository excludes the source CSVs.
+`price` is the asking price in GBP, `tax` is annual tax in GBP, `mileage`
+is in miles, `mpg` is in miles per gallon, `engineSize` is in litres, and
+`year` is the vehicle model year.
+
+Notebook 01 and `python -m src.data` use the same cleaning function. It
+standardizes two model labels before deduplication, retaining the first
+occurrence of identical rows because the dataset has no listing ID. It keeps
+model years 1995–2020 to match the historical snapshot, removes non-electric
+listings with zero engine size as likely missing data, and removes MPG below
+10 as a suspected input or unit issue. Zero tax and high MPG can be valid
+and are retained.
+
+The notebook records input SHA-256 hashes and overlap checks in
+[`reports/data_audit.json`](reports/data_audit.json). Optionally add
+`cclass.csv` and `focus.csv` to audit matches against the Mercedes and Ford
+files. The notebook records a skipped check for each absent file. These
+subsets and the two `unclean` variants are excluded from the training input.
+The audit describes the cleaning inputs only. Saved model and evaluation
+artifacts were generated before model-label normalization was shared.
 
 ## Reproduce the baseline and model selection
 

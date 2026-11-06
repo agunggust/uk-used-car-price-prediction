@@ -30,6 +30,7 @@ REQUIRED_COLUMNS = (
     "brand",
 )
 NUMERIC_COLUMNS = ("year", "price", "mileage", "tax", "mpg", "engineSize")
+MODEL_LABELS = {"SL CLASS": "SL Class", "X-CLASS": "X Class"}
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -90,6 +91,7 @@ def clean_data(frame: pd.DataFrame) -> pd.DataFrame:
                 f"Column {column!r} must contain numeric values"
             ) from error
 
+    cleaned["model"] = cleaned["model"].replace(MODEL_LABELS)
     cleaned = cleaned.drop_duplicates()
     cleaned = cleaned.loc[cleaned["year"].between(1995, 2020)]
     invalid_engine = (cleaned["engineSize"] == 0) & (cleaned["fuelType"] != "Electric")

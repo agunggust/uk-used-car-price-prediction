@@ -1,0 +1,44 @@
+{
+  "dataset": "https://www.kaggle.com/datasets/adityadesai13/used-car-dataset-ford-and-mercedes",
+  "input_sha256": {
+    "audi.csv": "f41fcda6795e500dbba178e44eefd247cfdcd31e2a564fbea2f8baa327167481",
+    "bmw.csv": "7efa367e8c108a7da93490c44a35e4010b8db96c22f3bde5b609562638ea2d98",
+    "ford.csv": "48465d469ce740f8ec5e72196b1662145ed7472a764ccf4fde25c0ce0fc2354b",
+    "hyundi.csv": "b481695ec0c926dae8f830fa3d786efec3150e0c43e543b6f9a8034e33446eb6",
+    "merc.csv": "8091d8c75199db371ea61b7387bcfc245fc5ad97af9f2ea6d0570d58782a3fce",
+    "skoda.csv": "cf7595b8f9bb1274cee4a56b613d8674cf9c5e6bc15141fdf5e74ffdbd1ee127",
+    "toyota.csv": "078f3d68d4583c5a0b0bd8e6fc6a66195d13ccbaf7ddca831a2c249bff20aeda",
+    "vauxhall.csv": "1a09a3440ab93e2532d2e8ba65fe7e0e30d2ba5f244e9ea9c862c24ec325f69d",
+    "vw.csv": "f560dc91f9ab752b53fd318e15c9e95a808b51976fbc9e6783da36d33279fbf1",
+    "cclass.csv": "472642980e032eeb7d81a0dd753303ed92b2ffba828bcd62d29b52eaec99f7ae",
+    "focus.csv": "8bf935a4f0bd2dce346dc3bfc529bc59548f334bdc6ab7a933ec3f40075c5a41"
+  },
+  "raw_rows": 99187,
+  "clean_rows": 97411,
+  "removed_rows": 1776,
+  "overlap_key": [
+    "model",
+    "year",
+    "price",
+    "transmission",
+    "mileage",
+    "fuelType",
+    "engineSize"
+  ],
+  "overlap_checks": {
+    "cclass.csv": {
+      "brand": "merc",
+      "status": "checked",
+      "rows": 3899,
+      "matched_rows": 3634,
+      "matched_fraction": 0.932033854834573
+    },
+    "focus.csv": {
+      "brand": "ford",
+      "status": "checked",
+      "rows": 5454,
+      "matched_rows": 4670,
+      "matched_fraction": 0.8562522918958563
+    }
+  }
+}

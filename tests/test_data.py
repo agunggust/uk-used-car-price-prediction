@@ -83,6 +83,17 @@ def test_clean_data_drops_duplicates(listings: pd.DataFrame) -> None:
     assert not cleaned.duplicated().any()
 
 
+def test_clean_data_normalizes_model_labels_before_deduplication(
+    listings: pd.DataFrame,
+) -> None:
+    row = listings.iloc[0].to_dict()
+    frame = pd.DataFrame(
+        [{**row, "model": label} for label in ("SL CLASS", "X-CLASS", "SL Class")]
+    )
+
+    assert clean_data(frame)["model"].tolist() == ["SL Class", "X Class"]
+
+
 def test_clean_data_rejects_missing_values(listings: pd.DataFrame) -> None:
     frame = listings.copy()
     frame.loc[0, "mileage"] = None
