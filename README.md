@@ -122,6 +122,33 @@ command also runs permutation importance — shuffling each source column throug
 the full pipeline and measuring how much MAE worsens. The command accepts
 `--data`, `--model`, and `--reports-dir`.
 
+## Stress checks on the historical holdout
+
+Run `python -m src.robustness` after model selection to regenerate
+[`reports/robustness_summary.json`](reports/robustness_summary.json). A
+comparable-listing baseline uses the first training median available at
+`brand/model/age band`, `brand/model`, or `brand`, requiring at least 10
+training listings at each level. It falls back to the overall training
+median. The age bands are 0–1, 2–3, 4–5, 6–8, 9–11, and 12+ years.
+
+On the same 19,483 listings, XGBoost has MAE **£1,319** versus **£2,388**
+for the comparable-listing baseline. Model support counts are based on
+training listings with the same brand and model:
+
+| Training support | Holdout listings | XGBoost MAE | XGBoost bias |
+|---|---:|---:|---:|
+| Common (10+) | 19,440 | £1,310 | −£162 |
+| Rare (1–9) | 38 | £6,001 | −£4,833 |
+| Unseen (0) | 5 | £2,497 | −£1,622 |
+
+About 66.3% of holdout listings share a brand, model, year, transmission,
+fuel type, engine size, and 1,000-mile bin with at least one training
+listing. MAE is £1,242 with a match and £1,472 without one. Matching
+specifications do not establish that listings describe the same vehicle.
+These are comparisons within a historical snapshot. The rare and unseen
+groups are small, and the dataset provides no listing dates or newer
+snapshot for temporal validation.
+
 ## Findings
 
 Numbers below come from the holdout split (19,483 listings) and can be
