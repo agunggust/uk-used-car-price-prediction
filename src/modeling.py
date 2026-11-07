@@ -4,7 +4,6 @@ import argparse
 import json
 from pathlib import Path
 
-import joblib
 import pandas as pd
 from sklearn.dummy import DummyRegressor
 from sklearn.linear_model import Ridge
@@ -12,13 +11,13 @@ from sklearn.model_selection import GridSearchCV, KFold
 from xgboost import XGBRegressor
 
 from src.evaluate import score_regression
+from src.provenance import load_verified_model, save_model
 from src.train import (
     DATA_PATH,
     MODEL_PATH,
     RANDOM_STATE,
     build_model,
-    load_dataset,
-    split_dataset,
+    load_evaluation_split,
 )
 
 
@@ -128,12 +127,11 @@ def run_modeling(
             "run `python -m src.train` first."
         )
 
-    frame = load_dataset(data_path)
-    X_train, X_test, y_train, y_test = split_dataset(frame)
+    (X_train, X_test, y_train, y_test), evaluation_input = load_evaluation_split(data_path)
+    baseline, baseline_provenance = load_verified_model(baseline_model_path, evaluation_input)
     search = build_search(cv_splits=cv_splits)
     search.fit(X_train, y_train)
 
-    baseline = joblib.load(baseline_model_path)
     dummy = DummyRegressor(strategy="median").fit(X_train, y_train)
     selected = search.best_estimator_
     predictions = {
@@ -150,9 +148,8 @@ def run_modeling(
 
     model_path = Path(model_path)
     reports_dir = Path(reports_dir)
-    model_path.parent.mkdir(parents=True, exist_ok=True)
     reports_dir.mkdir(parents=True, exist_ok=True)
-    joblib.dump(selected, model_path)
+    selected_provenance = save_model(selected, model_path, evaluation_input)
 
     cv_results = _make_cv_results(search)
     cv_results.to_csv(reports_dir / "modeling_cv_results.csv", index=False)
@@ -167,6 +164,10 @@ def run_modeling(
         "test_size": len(X_test),
         "training_size": len(X_train),
         "test_metrics": test_metrics.to_dict(orient="index"),
+        "provenance": {
+            "selected_model": selected_provenance,
+            "ridge_baseline": baseline_provenance,
+        },
     }
     with (reports_dir / "model_metrics.json").open("w", encoding="utf-8") as file:
         json.dump(metrics, file, ensure_ascii=False, indent=2)

@@ -118,7 +118,7 @@ def prepare_data(
     cleaned = clean_data(load_raw_data(data_dir))
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    cleaned.to_csv(output_path, index=False)
+    cleaned.to_csv(output_path, index=False, lineterminator="\n")
     return cleaned
 
 

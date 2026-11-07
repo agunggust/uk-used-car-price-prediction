@@ -3,12 +3,12 @@
 import argparse
 from pathlib import Path
 
-import joblib
 import pandas as pd
 from sklearn.dummy import DummyRegressor
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
-from src.train import DATA_PATH, MODEL_PATH, load_dataset, split_dataset
+from src.provenance import load_verified_model
+from src.train import DATA_PATH, MODEL_PATH, load_evaluation_split
 
 
 def score_regression(y_true, y_pred) -> dict[str, float]:
@@ -31,11 +31,10 @@ def evaluate_model(
             f"Model not found at {model_path}; run `python -m src.train` first."
         )
 
-    frame = load_dataset(data_path)
-    X_train, X_test, y_train, y_test = split_dataset(frame)
+    (X_train, X_test, y_train, y_test), evaluation_input = load_evaluation_split(data_path)
+    model, _ = load_verified_model(model_path, evaluation_input)
 
     dummy = DummyRegressor(strategy="median").fit(X_train, y_train)
-    model = joblib.load(model_path)
     predictions = {
         "Median dummy": dummy.predict(X_test),
         "Ridge + log(price)": model.predict(X_test),

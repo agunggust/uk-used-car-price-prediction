@@ -1,9 +1,10 @@
 """Train and save the Ridge baseline used-car price model."""
 
 import argparse
+from hashlib import sha256
+from io import BytesIO
 from pathlib import Path
 
-import joblib
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
@@ -13,6 +14,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
 from src.features import add_car_age
+from src.provenance import save_model, split_index_sha256
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -38,12 +40,18 @@ INPUT_FEATURES = (
 
 def load_dataset(data_path: Path = DATA_PATH) -> pd.DataFrame:
     """Load the cleaned dataset and validate fields needed for training."""
+    frame, _ = _read_dataset(data_path)
+    return frame
+
+
+def _read_dataset(data_path: Path) -> tuple[pd.DataFrame, str]:
     data_path = Path(data_path)
     if not data_path.is_file():
         raise FileNotFoundError(
             f"Cleaned data not found at {data_path}; run `python -m src.data` first."
         )
-    frame = pd.read_csv(data_path)
+    payload = data_path.read_bytes()
+    frame = pd.read_csv(BytesIO(payload))
     missing = sorted(set((*INPUT_FEATURES, TARGET)) - set(frame.columns))
     if missing:
         raise ValueError(f"Dataset is missing required columns: {missing}")
@@ -51,7 +59,7 @@ def load_dataset(data_path: Path = DATA_PATH) -> pd.DataFrame:
         raise ValueError(f"Dataset is empty: {data_path}")
     if frame[TARGET].isna().any() or (frame[TARGET] <= 0).any():
         raise ValueError("Target 'price' must contain positive, non-missing values.")
-    return frame
+    return frame, sha256(payload).hexdigest()
 
 
 def split_dataset(
@@ -65,6 +73,25 @@ def split_dataset(
     return train_test_split(
         X, y, test_size=test_size, random_state=random_state
     )
+
+
+def load_evaluation_split(data_path: Path = DATA_PATH) -> tuple[tuple, dict]:
+    """Load one CSV snapshot and identify the exact ordered train and holdout rows."""
+    frame, dataset_sha256 = _read_dataset(data_path)
+    split = split_dataset(frame)
+    X_train, X_test, _, _ = split
+    return split, {
+        "dataset_sha256": dataset_sha256,
+        "dataset_rows": len(frame),
+        "split": {
+            "test_size": TEST_SIZE,
+            "random_state": RANDOM_STATE,
+            "train_rows": len(X_train),
+            "holdout_rows": len(X_test),
+            "train_index_sha256": split_index_sha256(X_train.index),
+            "holdout_index_sha256": split_index_sha256(X_test.index),
+        },
+    }
 
 
 def build_model() -> TransformedTargetRegressor:
@@ -103,14 +130,11 @@ def train_model(
     model_path: Path = MODEL_PATH,
 ) -> TransformedTargetRegressor:
     """Fit on the training split only and persist the fitted estimator."""
-    frame = load_dataset(data_path)
-    X_train, _, y_train, _ = split_dataset(frame)
+    (X_train, _, y_train, _), evaluation_input = load_evaluation_split(data_path)
     model = build_model()
     model.fit(X_train, y_train)
 
-    model_path = Path(model_path)
-    model_path.parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump(model, model_path)
+    save_model(model, model_path, evaluation_input)
     return model
 
 

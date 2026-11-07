@@ -45,8 +45,8 @@ The notebook records input SHA-256 hashes and overlap checks in
 `cclass.csv` and `focus.csv` to audit matches against the Mercedes and Ford
 files. The notebook records a skipped check for each absent file. These
 subsets and the two `unclean` variants are excluded from the training input.
-The audit describes the cleaning inputs only. Saved model and evaluation
-artifacts were generated before model-label normalization was shared.
+The audit also records the SHA-256 of the cleaned CSV so it can be matched
+to the dataset identified in the model and evaluation reports.
 
 ## Reproduce the baseline and model selection
 
@@ -77,6 +77,21 @@ metrics do not affect model selection. Outputs are saved to
 `reports/model_metrics.json`. Import the saved estimator and call `.predict()`
 with a DataFrame containing the input columns from `cars_clean.csv` except
 `price`; preprocessing is included in the estimator.
+
+Each saved model records the SHA-256 of the exact cleaned CSV and the hashes
+of the ordered training and holdout row positions, alongside the split seed
+and sizes. It also records the Git HEAD at fit time, hashes of the Python
+source files used in that checkout, and the Python and modeling dependency
+versions. Source hashes capture local edits when training happens before
+they are committed. The cleaning command writes LF line endings so the
+CSV hash does not change solely because of the operating system.
+
+`src.evaluate`, `src.modeling`, and `src.analysis` check the dataset and
+split before scoring saved models. If a model has missing or mismatched
+provenance, use the original cleaned CSV or rerun the training commands
+above. `model_metrics.json` and `analysis_summary.json` include the evaluated
+model file SHA-256 and its training provenance. Prediction still accepts
+the fitted estimator directly.
 
 To customize file locations, use `--data-dir` and `--output` with
 `python -m src.data`, or `--data` and `--model` with `src.train` and

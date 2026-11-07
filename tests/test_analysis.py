@@ -1,8 +1,8 @@
 """Tests for feature importance and error analysis."""
 
 import json
+from hashlib import sha256
 
-import joblib
 import pandas as pd
 import pytest
 from sklearn.linear_model import LinearRegression
@@ -17,7 +17,8 @@ from src.analysis import (
     permutation_importances,
     run_analysis,
 )
-from src.train import TARGET, build_model
+from src.provenance import save_model
+from src.train import TARGET, build_model, load_evaluation_split
 from xgboost import XGBRegressor
 
 
@@ -52,9 +53,11 @@ def data_path(tmp_path, listings: pd.DataFrame):
 
 
 @pytest.fixture
-def model_path(tmp_path, fitted_model):
+def model_path(tmp_path, fitted_model, data_path):
     path = tmp_path / "model.joblib"
-    joblib.dump(fitted_model, path)
+    (X_train, _, y_train, _), evaluation_input = load_evaluation_split(data_path)
+    fitted_model.fit(X_train, y_train)
+    save_model(fitted_model, path, evaluation_input)
     return path
 
 
@@ -188,6 +191,9 @@ def test_run_analysis_writes_reports(
 
     summary = json.loads((reports_dir / "analysis_summary.json").read_text("utf-8"))
     assert summary["holdout_rows"] == len(results["predictions"])
+    provenance = summary["provenance"]
+    assert provenance["sha256"] == sha256(model_path.read_bytes()).hexdigest()
+    assert provenance["evaluation_input"]["split"]["holdout_rows"] == summary["holdout_rows"]
     assert summary["holdout_metrics"]["MAE (£)"] > 0
     assert 0 <= summary["share_within_25pct"] <= 1
     assert summary["figures"]["importance"].endswith(

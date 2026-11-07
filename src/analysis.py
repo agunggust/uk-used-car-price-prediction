@@ -5,7 +5,6 @@ import json
 import sys
 from pathlib import Path
 
-import joblib
 import matplotlib
 import numpy as np
 import pandas as pd
@@ -18,7 +17,8 @@ from sklearn.inspection import permutation_importance as sklearn_permutation_imp
 from src.evaluate import score_regression
 from src.features import add_car_age
 from src.modeling import BEST_MODEL_PATH
-from src.train import DATA_PATH, INPUT_FEATURES, load_dataset, split_dataset
+from src.provenance import load_verified_model
+from src.train import DATA_PATH, INPUT_FEATURES, load_evaluation_split
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -130,8 +130,11 @@ def permutation_importances(
 
 def holdout_predictions(model, data_path: Path = DATA_PATH) -> pd.DataFrame:
     """Score the holdout split and return per-row error details."""
-    frame = load_dataset(data_path)
-    _, X_test, _, y_test = split_dataset(frame)
+    (_, X_test, _, y_test), _ = load_evaluation_split(data_path)
+    return _score_holdout(model, X_test, y_test)
+
+
+def _score_holdout(model, X_test: pd.DataFrame, y_test: pd.Series) -> pd.DataFrame:
     predictions = pd.Series(model.predict(X_test), index=X_test.index)
 
     result = X_test.copy()
@@ -309,13 +312,11 @@ def run_analysis(
         raise FileNotFoundError(
             f"Model not found at {model_path}; run `python -m src.modeling` first."
         )
-    reports_dir = Path(reports_dir)
-    reports_dir.mkdir(parents=True, exist_ok=True)
-
-    model = joblib.load(model_path)
+    (_, X_test, _, y_test), evaluation_input = load_evaluation_split(data_path)
+    model, model_provenance = load_verified_model(model_path, evaluation_input)
     importances = feature_importances(model)
     by_source = aggregated_importances(importances)
-    predictions = holdout_predictions(model, data_path)
+    predictions = _score_holdout(model, X_test, y_test)
     permuted = permutation_importances(
         model, predictions.loc[:, list(INPUT_FEATURES)], predictions["actual"]
     )
@@ -323,6 +324,8 @@ def run_analysis(
     bands = error_by_price_band(predictions)
     ages = error_by_age(predictions)
 
+    reports_dir = Path(reports_dir)
+    reports_dir.mkdir(parents=True, exist_ok=True)
     importances.head(TOP_FEATURES).to_csv(
         reports_dir / "feature_importance_top.csv", index=False
     )
@@ -351,6 +354,7 @@ def run_analysis(
 
     metrics = score_regression(predictions["actual"], predictions["predicted"])
     summary = {
+        "provenance": model_provenance,
         "holdout_rows": len(predictions),
         "holdout_metrics": {name: float(value) for name, value in metrics.items()},
         "mean_residual": float(predictions["residual"].mean()),

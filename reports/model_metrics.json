@@ -31,5 +31,85 @@
       "RMSE (£)": 10270.572144129774,
       "R²": -0.05099062826000522
     }
+  },
+  "provenance": {
+    "selected_model": {
+      "sha256": "4d5e32ee53c7eb69027aaeed1f7c88d49976d63127124b965ba066c1e41e870e",
+      "evaluation_input": {
+        "dataset_sha256": "fa8ba78acc33dff414b6dc612fed54bbd67fc7fbf41b763a55fcac6df9c26c8f",
+        "dataset_rows": 97411,
+        "split": {
+          "test_size": 0.2,
+          "random_state": 42,
+          "train_rows": 77928,
+          "holdout_rows": 19483,
+          "train_index_sha256": "af0e8ddf3de6a83abaf4e1e3f4739cab9508db6b2b8333db44976dc72676fe1e",
+          "holdout_index_sha256": "d4348913daa07c69b9ba2b9b722436b3d6224ab84934934591642e4367904a3e"
+        }
+      },
+      "environment": {
+        "git_head": "8807c509f6da9208c0c871f2be81d69554fcc991",
+        "source_sha256": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "analysis.py": "7ed667a199fdd7ccafd739955f5d8f5a9a382edec5d90ecfc437a22e58640072",
+          "api.py": "c9b9bf45b066710eafc0eef1690f85cc37715d1483a2a5d28b7622026ce426d9",
+          "data.py": "9b10082ca31dbc516d769a7189dc9a34b6d8788c955ac12a7b50f35b9d608dad",
+          "evaluate.py": "b8e4d3a317e70b5f177abe52a8b8dfa0f62be830a3aca57c9559a200022f799a",
+          "features.py": "99c71ed6181feb4bb958947fe79ff875413682e60270e32869752c9a514383d2",
+          "modeling.py": "199bc594e247a7493a1fb131e4b6666a2a5fa45d2d74fe372c82e8105b24ec73",
+          "predict.py": "8b5451f97c2d8c5b40f61116ff9bc693a6bfa25d903a3091c12234fe75ff1127",
+          "provenance.py": "5525c5ba06c27272a2c09777fc735f39dba72c595499bd520891bf86d84c2b28",
+          "train.py": "6cfdc97123b6a9259db6c74ae4e526e6125c2bb3c01d0ce5f63ba1f9484abc3d"
+        },
+        "python": "3.12.10",
+        "packages": {
+          "joblib": "1.6.0",
+          "numpy": "2.5.3",
+          "pandas": "3.0.6",
+          "scikit-learn": "1.9.1",
+          "scipy": "1.18.1",
+          "xgboost": "3.4.1"
+        }
+      }
+    },
+    "ridge_baseline": {
+      "sha256": "f09b0ccf38c2692d055ca8b27bdd38d20ac655fc0a8d575d60fe7eb7e9beca48",
+      "evaluation_input": {
+        "dataset_sha256": "fa8ba78acc33dff414b6dc612fed54bbd67fc7fbf41b763a55fcac6df9c26c8f",
+        "dataset_rows": 97411,
+        "split": {
+          "test_size": 0.2,
+          "random_state": 42,
+          "train_rows": 77928,
+          "holdout_rows": 19483,
+          "train_index_sha256": "af0e8ddf3de6a83abaf4e1e3f4739cab9508db6b2b8333db44976dc72676fe1e",
+          "holdout_index_sha256": "d4348913daa07c69b9ba2b9b722436b3d6224ab84934934591642e4367904a3e"
+        }
+      },
+      "environment": {
+        "git_head": "8807c509f6da9208c0c871f2be81d69554fcc991",
+        "source_sha256": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "analysis.py": "7ed667a199fdd7ccafd739955f5d8f5a9a382edec5d90ecfc437a22e58640072",
+          "api.py": "c9b9bf45b066710eafc0eef1690f85cc37715d1483a2a5d28b7622026ce426d9",
+          "data.py": "9b10082ca31dbc516d769a7189dc9a34b6d8788c955ac12a7b50f35b9d608dad",
+          "evaluate.py": "b8e4d3a317e70b5f177abe52a8b8dfa0f62be830a3aca57c9559a200022f799a",
+          "features.py": "99c71ed6181feb4bb958947fe79ff875413682e60270e32869752c9a514383d2",
+          "modeling.py": "199bc594e247a7493a1fb131e4b6666a2a5fa45d2d74fe372c82e8105b24ec73",
+          "predict.py": "8b5451f97c2d8c5b40f61116ff9bc693a6bfa25d903a3091c12234fe75ff1127",
+          "provenance.py": "5525c5ba06c27272a2c09777fc735f39dba72c595499bd520891bf86d84c2b28",
+          "train.py": "6cfdc97123b6a9259db6c74ae4e526e6125c2bb3c01d0ce5f63ba1f9484abc3d"
+        },
+        "python": "3.12.10",
+        "packages": {
+          "joblib": "1.6.0",
+          "numpy": "2.5.3",
+          "pandas": "3.0.6",
+          "scikit-learn": "1.9.1",
+          "scipy": "1.18.1",
+          "xgboost": "3.4.1"
+        }
+      }
+    }
   }
 }
