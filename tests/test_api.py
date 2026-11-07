@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.api import build_parser, create_app
-from src.predict import PREDICTION_COLUMN, predict_prices
+from src.predict import PREDICTION_COLUMN, main as predict_cli, predict_prices
 from src.train import TARGET, build_model
 
 VALID_CAR = {
@@ -78,6 +78,50 @@ def test_predict_rejects_negative_mileage(client: TestClient) -> None:
     response = client.post("/predict", json={**VALID_CAR, "mileage": -5})
 
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("changes", [
+    {"year": 2035},
+    {"year": 2019.5},
+    {"mileage": -5},
+    {"tax": -1},
+    {"mpg": 0},
+    {"mileage": "Infinity"},
+    {"year": "NaN"},
+    {"engineSize": 0},
+    {"brand": "  "},
+])
+def test_cli_and_api_reject_same_invalid_listings(client, tmp_path, monkeypatch, changes):
+    car = {**VALID_CAR, **changes}
+    path = tmp_path / "listings.csv"
+    pd.DataFrame([car]).to_csv(path, index=False)
+    monkeypatch.setattr("sys.argv", [
+        "predict", "--input", str(path), "--model", str(client.app.state.model_path)
+    ])
+
+    assert client.post("/predict", json=car).status_code == 422
+    assert client.post("/predict/batch", json=[VALID_CAR, car]).status_code == 422
+    with pytest.raises(SystemExit, match="error:"):
+        predict_cli()
+
+
+def test_cli_and_api_accept_electric_and_unseen_model(client, tmp_path, monkeypatch):
+    car = {**VALID_CAR, "engineSize": 0, "fuelType": " Electric ", "model": "Unseen model"}
+    path = tmp_path / "listings.csv"
+    output = tmp_path / "predictions.csv"
+    pd.DataFrame([car]).to_csv(path, index=False)
+    monkeypatch.setattr("sys.argv", [
+        "predict", "--input", str(path), "--output", str(output),
+        "--model", str(client.app.state.model_path),
+    ])
+
+    predict_cli()
+    cli_price = pd.read_csv(output).loc[0, PREDICTION_COLUMN]
+    response = client.post("/predict", json=car)
+    batch = client.post("/predict/batch", json=[car])
+    assert response.status_code == batch.status_code == 200
+    assert response.json()["predicted_price"] == pytest.approx(cli_price)
+    assert batch.json()["predictions"] == pytest.approx([cli_price])
 
 
 def test_batch_preserves_order_and_count(client: TestClient) -> None:

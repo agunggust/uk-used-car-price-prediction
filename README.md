@@ -241,9 +241,12 @@ Invoke-RestMethod -Uri http://127.0.0.1:8000/predict -Method Post `
   -ContentType "application/json" -Body $body
 ```
 
-Field constraints (year 1995–2020, non-negative mileage and tax, positive MPG
-and engine size, non-empty text) are validated by Pydantic, so invalid payloads
-return HTTP 422 instead of being scored. If the model file is missing the
+The CLI and API apply the same value rules. Numeric fields must be finite.
+The model year must be a whole number from 1995 through 2020, mileage and tax
+must be non-negative, and MPG must be positive. Engine size must be positive
+except that `Electric` listings may use zero. Text is trimmed and must be
+non-empty. Unseen categories are accepted and handled by the model's encoder.
+Invalid API payloads return HTTP 422. If the model file is missing the
 endpoint returns HTTP 503 while `GET /health` still answers. To point the app
 at a different model, call `create_app(model_path)` from `src.api` in your own
 script.

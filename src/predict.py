@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 
 from src.evaluate import score_regression
@@ -61,6 +62,8 @@ def validate_input(frame: pd.DataFrame) -> pd.DataFrame:
     """
     raw = frame.copy()
     raw.columns = raw.columns.str.strip()
+    if raw.columns.has_duplicates:
+        raise ValueError("Input contains duplicate column names.")
 
     missing = sorted(set(INPUT_FEATURES) - set(raw.columns))
     if missing:
@@ -78,11 +81,27 @@ def validate_input(frame: pd.DataFrame) -> pd.DataFrame:
             raise ValueError(
                 f"Column {column!r} must contain numeric values"
             ) from error
+        if not np.isfinite(prepared[column]).all():
+            raise ValueError(f"Column {column!r} must contain finite values.")
 
     for column in TEXT_FEATURES:
         prepared[column] = prepared[column].astype("string").str.strip()
         if prepared[column].isna().any() or prepared[column].eq("").any():
             raise ValueError(f"Column {column!r} contains missing or empty text.")
+
+    year = prepared["year"]
+    if not (year.between(1995, 2020) & year.mod(1).eq(0)).all():
+        raise ValueError("Year must be a whole number from 1995 to 2020.")
+    prepared["year"] = year.astype(int)
+    for column in ("mileage", "tax"):
+        if prepared[column].lt(0).any():
+            raise ValueError(f"Column {column!r} must be non-negative.")
+    if prepared["mpg"].le(0).any():
+        raise ValueError("MPG must be positive.")
+    engine_size = prepared["engineSize"]
+    electric = prepared["fuelType"].eq("Electric")
+    if not (engine_size.gt(0) | (engine_size.eq(0) & electric)).all():
+        raise ValueError("Engine size must be positive, or zero for Electric listings.")
 
     return prepared
 
@@ -133,7 +152,7 @@ def main() -> None:
     parser.add_argument(
         "--output", type=Path, help="Optional CSV path for the predictions."
     )
-    parser.add_argument("--year", type=int, help="Single-car prediction: model year.")
+    parser.add_argument("--year", help="Single-car prediction: model year.")
     parser.add_argument("--mileage", type=float, help="Single car: mileage.")
     parser.add_argument("--tax", type=float, help="Single car: annual tax (£).")
     parser.add_argument("--mpg", type=float, help="Single car: MPG.")

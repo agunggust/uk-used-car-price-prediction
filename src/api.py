@@ -11,9 +11,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from src.predict import (
     DEFAULT_MODEL_PATH,
-    PREDICTION_COLUMN,
     load_price_model,
-    predict_prices,
+    validate_input,
 )
 
 
@@ -39,19 +38,15 @@ def create_app(model_path: Path = DEFAULT_MODEL_PATH) -> FastAPI:
 
         model_config = ConfigDict(extra="forbid")
 
-        year: int = Field(..., ge=1995, le=2020, description="Model year.")
-        mileage: float = Field(..., ge=0, description="Mileage in miles.")
-        tax: float = Field(..., ge=0, description="Annual vehicle excise duty.")
-        mpg: float = Field(..., gt=0, description="Combined MPG.")
-        engineSize: float = Field(..., gt=0, description="Engine size in litres.")
-        brand: str = Field(..., min_length=1, description="e.g. audi.")
-        model: str = Field(..., min_length=1, description="e.g. A1.")
-        transmission: str = Field(
-            ..., min_length=1, description="Manual or Automatic."
-        )
-        fuelType: str = Field(
-            ..., min_length=1, description="Petrol, Diesel, Hybrid..."
-        )
+        year: int | float = Field(..., description="Whole model year from 1995 to 2020.")
+        mileage: float = Field(..., description="Non-negative mileage in miles.")
+        tax: float = Field(..., description="Non-negative annual vehicle excise duty.")
+        mpg: float = Field(..., description="Positive combined MPG.")
+        engineSize: float = Field(..., description="Engine size in litres. Zero is allowed for Electric.")
+        brand: str = Field(..., description="e.g. audi.")
+        model: str = Field(..., description="e.g. A1.")
+        transmission: str = Field(..., description="Manual or Automatic.")
+        fuelType: str = Field(..., description="Petrol, Diesel, Hybrid, Electric...")
 
     class PredictionResponse(BaseModel):
         predicted_price: float
@@ -60,6 +55,18 @@ def create_app(model_path: Path = DEFAULT_MODEL_PATH) -> FastAPI:
     class BatchResponse(BaseModel):
         predictions: list[float]
         count: int
+
+    def _predict(cars: list[CarInput]) -> list[float]:
+        frame = pd.DataFrame([car.model_dump() for car in cars])
+        try:
+            prepared = validate_input(frame)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        try:
+            predictions = _model().predict(prepared)
+        except (FileNotFoundError, TypeError, ValueError) as error:
+            raise HTTPException(status_code=503, detail=str(error)) from error
+        return [float(value) for value in predictions]
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -72,26 +79,15 @@ def create_app(model_path: Path = DEFAULT_MODEL_PATH) -> FastAPI:
     @app.post("/predict", response_model=PredictionResponse)
     def predict(car: CarInput) -> PredictionResponse:
         """Score one car and return the price in pounds."""
-        frame = pd.DataFrame([car.model_dump()])
-        try:
-            price = predict_prices(_model(), frame)[PREDICTION_COLUMN].iloc[0]
-        except (FileNotFoundError, TypeError, ValueError) as error:
-            raise HTTPException(status_code=503, detail=str(error))
-        return PredictionResponse(predicted_price=float(price), input=car)
+        price, = _predict([car])
+        return PredictionResponse(predicted_price=price, input=car)
 
     @app.post("/predict/batch", response_model=BatchResponse)
     def predict_batch(cars: list[CarInput]) -> BatchResponse:
         """Score many cars in one request, preserving input order."""
         if not cars:
             raise HTTPException(status_code=422, detail="Batch must not be empty.")
-        frame = pd.DataFrame([car.model_dump() for car in cars])
-        try:
-            prices = predict_prices(_model(), frame)[PREDICTION_COLUMN]
-        except (FileNotFoundError, TypeError, ValueError) as error:
-            raise HTTPException(status_code=503, detail=str(error))
-        return BatchResponse(
-            predictions=[float(value) for value in prices], count=len(cars)
-        )
+        return BatchResponse(predictions=_predict(cars), count=len(cars))
 
     return app
 
