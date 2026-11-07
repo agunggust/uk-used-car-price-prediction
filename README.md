@@ -1,10 +1,28 @@
-# uk-used-car-price-prediction
+# UK Used-Car Listing Prices
 
 [![CI](https://github.com/agunggust/uk-used-car-price-prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/agunggust/uk-used-car-price-prediction/actions/workflows/ci.yml)
 
-Baseline project for predicting UK used-car listing prices. The notebooks document
-the data audit, exploratory analysis, and Ridge baseline; the `src` package provides
-the same preparation and training steps as repeatable command-line commands.
+**How could a dealer analyst use historical listing data to screen asking prices
+for manual review?** This case study uses 97,411 listings from nine UK brands.
+On a random holdout of 19,483 listings, XGBoost cut mean absolute error from
+**£1,651 to £1,319 (20.1%)** versus Ridge. It still estimated prices in the
+highest actual asking-price quartile **£955 too low on average**.
+
+![Holdout prediction bias by actual asking-price quartile. Q1 +£237 (4,910 listings), Q2 +£77 (4,840), Q3 −£50 (4,876), Q4 −£955 (4,857).](reports/figures/analysis_bias_by_price_band.png)
+
+**Example review workflow.** A dealer analyst could route a listing estimated
+at £28,000 with only six training examples of that brand and model to manual
+review. Before setting an asking price, the reviewer would check recent
+comparable listings, trim, and condition. An illustrative rule flags a
+listing when its estimate is at least £25,000 or its brand and model have
+fewer than ten training examples. The rule's impact on workload and
+accuracy still needs testing on current listings.
+The chart uses **actual** asking-price quartiles for historical diagnosis.
+New-listing routing uses information available at prediction time.
+
+[Exploratory analysis](notebooks/02_eda.ipynb) ·
+[Model and error analysis](notebooks/05_analysis_interpretability.ipynb) ·
+[Evaluation metrics](reports/model_metrics.json)
 
 ## Setup
 
@@ -101,7 +119,7 @@ To customize file locations, use `--data-dir` and `--output` with
 ## Analyze the model
 
 `python -m src.analysis` scores the same holdout split as `src.modeling` and
-writes CSV reports, a JSON summary, and four figures:
+writes CSV reports, a JSON summary, and five figures:
 
 | Output | Contents |
 |---|---|
@@ -112,7 +130,7 @@ writes CSV reports, a JSON summary, and four figures:
 | `reports/error_by_price_band.csv` / `error_by_age.csv` | error across price quartiles and age bands |
 | `reports/worst_predictions.csv` | the 20 largest holdout misses |
 | `reports/analysis_summary.json` | headline metrics, accuracy bands, both importance views |
-| `reports/figures/analysis_*.png` | importance bars, the two importance views compared, residual scatter, MAE by brand |
+| `reports/figures/analysis_*.png` | importance bars and comparison, residual scatter, MAE by brand, and bias by actual price quartile |
 
 Impurity importance is read from the fitted XGBoost booster and the encoded
 names come from the fitted `ColumnTransformer`, so one-hot categories are
@@ -154,19 +172,20 @@ snapshot for temporal validation.
 Numbers below come from the holdout split (19,483 listings) and can be
 regenerated with `python -m src.analysis`.
 
-**Overall accuracy.** MAE £1,319, RMSE £2,295, R² 0.948; the median listing is
-off by 6.2%, 71.1% fall within ±10% and 97.7% within ±25%. Mean residual is
-−£172, so the model slightly under-prices overall.
+**Overall accuracy.** MAE is the mean absolute difference between predicted
+and actual asking price (£1,319). RMSE gives more weight to large misses
+(£2,295), and R² is 0.948. Median absolute percentage error is 6.2%.
+Of all holdout predictions, 71.1% fall within ±10% and 97.7% within ±25%.
+Mean bias (predicted minus actual asking price) is −£172.
 
-**Error grows with price.** MAE rises from £618 on the cheapest quartile to
-£2,464 on the priciest, and relative error climbs from 7.7% to 9.2% with a
-−£955 bias in the top quartile: expensive cars are systematically under-valued.
-Reporting a single £1,319 MAE therefore flatters the cheap end, where most
-listings sit.
+**Error grows with price.** MAE rises from £618 in the cheapest quartile to
+£2,464 in the priciest. MAE divided by the segment median asking price
+rises from 7.7% to 9.2%. Each quartile contains roughly a quarter of the
+holdout, and the overall MAE obscures the larger premium-segment misses.
 
 **New cars are the hardest.** The 0–1 year band has the highest MAE (£1,890)
-versus £931 for 6–8 year cars — new-car pricing is driven by trim and options
-that are not in the dataset.
+versus £931 for 6–8 year cars. Missing trim and options are possible
+explanations that this dataset cannot verify.
 
 **Brands.** Mercedes (£2,104), BMW (£1,880) and Audi (£1,815) have the largest
 absolute errors because their cars cost more, but on a relative basis they sit
@@ -181,10 +200,10 @@ tells a different story: `engineSize` (+£2,448 MAE), `year` (+£2,152),
 distinct values, so use `reports/feature_importance_permutation.csv` when
 deciding which data to collect next.
 
-**Outliers are real data problems.** The worst miss is a 2011 Mercedes SL
-listed at £149,948 but predicted at £21,344; three of the five worst cases are
-Mercedes G-Class. Treat these as candidates for data cleaning rather than as
-model failures.
+**Largest misses need review.** The worst miss is a 2011 Mercedes SL listed
+at £149,948 with a prediction of about £21,345. Three of the five largest
+misses are Mercedes G-Class listings. Check the original listing and
+comparable vehicles before deciding whether to correct the data.
 
 **Do not read into tiny segments.** `Electric` and transmission `Other` have
 two listings each in the holdout, so their reported errors are noise.

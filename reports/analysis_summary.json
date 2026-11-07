@@ -164,6 +164,7 @@
     "importance": "reports/figures/analysis_feature_importance.png",
     "importance_comparison": "reports/figures/analysis_importance_comparison.png",
     "residuals": "reports/figures/analysis_residuals.png",
-    "error_by_brand": "reports/figures/analysis_error_by_brand.png"
+    "error_by_brand": "reports/figures/analysis_error_by_brand.png",
+    "bias_by_price_band": "reports/figures/analysis_bias_by_price_band.png"
   }
 }

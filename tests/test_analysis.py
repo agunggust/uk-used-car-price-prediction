@@ -187,6 +187,7 @@ def test_run_analysis_writes_reports(
         "importance_comparison",
         "residuals",
         "error_by_brand",
+        "bias_by_price_band",
     }
 
     summary = json.loads((reports_dir / "analysis_summary.json").read_text("utf-8"))
@@ -201,6 +202,7 @@ def test_run_analysis_writes_reports(
     )
     assert 0 < len(summary["top_permutation_features"]) <= 10
     assert (reports_dir / "figures" / "analysis_importance_comparison.png").is_file()
+    assert (reports_dir / "figures" / "analysis_bias_by_price_band.png").is_file()
 
     worst = pd.read_csv(reports_dir / "worst_predictions.csv")
     assert len(worst) == min(20, len(results["predictions"]))

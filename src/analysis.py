@@ -293,6 +293,32 @@ def _plot_error_by_brand(segments: dict[str, pd.DataFrame], figures_dir: Path) -
     return path
 
 
+def _plot_bias_by_price_band(bands: pd.DataFrame, figures_dir: Path) -> Path:
+    figure, axis = plt.subplots(figsize=(8, 3.7))
+    labels = [
+        f"{band}  ·  n={count:,}"
+        for band, count in zip(bands["price_band"], bands["listings"])
+    ]
+    bias = bands["bias"]
+    bars = axis.barh(labels, bias, color=bias.lt(0).map({True: "#a33e44", False: "#22657d"}))
+    axis.bar_label(
+        bars, labels=[f"{'−' if value < 0 else '+'}£{abs(value):,.0f}" for value in bias],
+        padding=5,
+    )
+    axis.invert_yaxis()
+    axis.margins(x=0.22)
+    axis.axvline(0, color="#405061", linewidth=0.9)
+    axis.set_title("Average prediction bias by actual asking-price quartile", loc="left")
+    axis.set_xlabel("Mean predicted minus actual price (£)  ·  Negative = underestimation")
+    axis.spines[["top", "right", "left"]].set_visible(False)
+    axis.tick_params(axis="y", length=0)
+    figure.tight_layout()
+    path = figures_dir / "analysis_bias_by_price_band.png"
+    figure.savefig(path, dpi=150)
+    plt.close(figure)
+    return path
+
+
 def _relative_path(path: Path) -> str:
     """Return a project-relative path when possible, else the absolute path."""
     try:
@@ -350,6 +376,7 @@ def run_analysis(
         ),
         "residuals": _plot_residuals(predictions, figures_dir),
         "error_by_brand": _plot_error_by_brand(segments, figures_dir),
+        "bias_by_price_band": _plot_bias_by_price_band(bands, figures_dir),
     }
 
     metrics = score_regression(predictions["actual"], predictions["predicted"])
